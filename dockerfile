@@ -15,11 +15,7 @@ FROM golang:1.19 as builder
 WORKDIR /build
 COPY . .
 
-# swaggo "installieren" um die Swagger Doku zu generieren
-RUN curl -L https://github.com/swaggo/swag/releases/download/v1.8.9/swag_1.8.9_Linux_x86_64.tar.gz | \
-    tar xvfz - swag
-
-RUN ./swag init
+RUN go generate
 RUN go build -o html2pdf .
 
 # ---
