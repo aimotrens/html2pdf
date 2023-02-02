@@ -15,7 +15,8 @@ FROM golang:1.19 as builder
 WORKDIR /build
 COPY . .
 
-RUN go generate
+RUN go install github.com/swaggo/swag/cmd/swag@latest
+RUN swag init
 RUN go build -o html2pdf .
 
 # ---
