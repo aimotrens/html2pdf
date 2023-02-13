@@ -17,16 +17,14 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-var _wkhtmltopdfPath string
-
 func main() {
-	_wkhtmltopdfPath := os.Getenv("WKHTMLTOPDF_PATH")
-	if _wkhtmltopdfPath == "" {
-		_wkhtmltopdfPath = "./wkhtmltopdf"
+	wkhtmltopdfPath := os.Getenv("WKHTMLTOPDF_PATH")
+	if wkhtmltopdfPath == "" {
+		wkhtmltopdfPath = "./wkhtmltopdf"
 	}
 
-	if _, err := os.Stat(_wkhtmltopdfPath); err != nil {
-		log.Fatal("wkhtmltopdf not found: '" + _wkhtmltopdfPath + "'")
+	if _, err := os.Stat(wkhtmltopdfPath); err != nil {
+		log.Fatal("wkhtmltopdf not found: '" + wkhtmltopdfPath + "'")
 	}
 
 	docs.SwaggerInfo.Title = "HTML to PDF Konverter"
@@ -45,7 +43,7 @@ func main() {
 		api.GET("/healthcheck", HealthCheck)
 		h2p := api.Group("/html2pdf")
 		{
-			h2p.POST("/convert", Convert)
+			h2p.POST("/convert", func(ctx *gin.Context) { Convert(ctx, wkhtmltopdfPath) })
 		}
 	}
 
@@ -61,7 +59,7 @@ func main() {
 // @Success 200 {file} binary
 // @Success 500 {string} string
 // @Router /html2pdf/convert [post]
-func Convert(g *gin.Context) {
+func Convert(g *gin.Context, wkhtmltopdfPath string) {
 	tmpID, err := uuid.NewV4()
 	if err != nil {
 		g.AbortWithError(http.StatusInternalServerError, err)
@@ -77,7 +75,7 @@ func Convert(g *gin.Context) {
 		return
 	}
 
-	p := exec.Command(_wkhtmltopdfPath, "--page-size", "A4", "-", tmpFile)
+	p := exec.Command(wkhtmltopdfPath, "--page-size", "A4", "-", tmpFile)
 	w, err := p.StdinPipe()
 	if err != nil {
 		g.AbortWithError(http.StatusInternalServerError, err)
