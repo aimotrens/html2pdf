@@ -34,6 +34,12 @@ func main() {
 
 	r := gin.Default()
 
+	r.NoRoute(func(ctx *gin.Context) {
+		ctx.Redirect(http.StatusTemporaryRedirect, "/swagger/index.html")
+	})
+
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
+
 	api := r.Group("/api")
 	{
 		api.GET("/healthcheck", HealthCheck)
@@ -42,8 +48,6 @@ func main() {
 			h2p.POST("/convert", Convert)
 		}
 	}
-
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
 	fmt.Println("Html2Pdf started.")
 	r.Run(":8080")
