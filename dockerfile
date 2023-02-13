@@ -13,9 +13,15 @@ RUN apt-get install -y --no-install-recommends /wkhtmltox_0.12.6.1-2.bullseye_am
 
 FROM golang:1.19 as builder
 WORKDIR /build
-COPY . .
 
 RUN go install github.com/swaggo/swag/cmd/swag@latest
+
+ADD go.mod .
+ADD go.mod .
+
+RUN go mod download
+
+ADD . .
 RUN swag init
 RUN go build -o html2pdf .
 
