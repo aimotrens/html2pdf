@@ -1,21 +1,31 @@
 package main
 
 import (
-	"errors"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gofrs/uuid"
 
-	docs "github.com/aimotrens/html2pdf/docs"
+	"github.com/aimotrens/html2pdf/app/healthcheck"
+	"github.com/aimotrens/html2pdf/app/html2pdf"
+	_ "github.com/aimotrens/html2pdf/docs"
+
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
+
+// @title HTML zu PDF Konverter API
+// @description API für den HTML zu PDF Konverter
+// @version 1.0.0
+// @BasePath /api
+
+// @contact.name   aimotrens
+// @contact.url    https://github.com/aimotrens/html2pdf
+
+// @license.name  MIT Lizenz
+// @license.url   https://github.com/aimotrens/html2pdf/blob/main/LICENSE
 
 func main() {
 	wkhtmltopdfPath := os.Getenv("WKHTMLTOPDF_PATH")
@@ -27,9 +37,6 @@ func main() {
 		log.Fatal("wkhtmltopdf not found: '" + wkhtmltopdfPath + "'")
 	}
 
-	docs.SwaggerInfo.Title = "HTML to PDF Konverter"
-	docs.SwaggerInfo.BasePath = "/api"
-
 	r := gin.Default()
 
 	r.NoRoute(func(ctx *gin.Context) {
@@ -40,75 +47,17 @@ func main() {
 
 	api := r.Group("/api")
 	{
-		api.GET("/healthcheck", HealthCheck)
+		hc := api.Group("/healthcheck")
+		{
+			hc.GET("/", healthcheck.HealthCheck)
+		}
+
 		h2p := api.Group("/html2pdf")
 		{
-			h2p.POST("/convert", func(ctx *gin.Context) { Convert(ctx, wkhtmltopdfPath) })
+			h2p.POST("/convert", func(ctx *gin.Context) { html2pdf.Convert(ctx, wkhtmltopdfPath) })
 		}
 	}
 
 	fmt.Println("Html2Pdf started.")
 	r.Run(":8080")
-}
-
-// Convert HTML to PDF
-// @Summary Konvertiert eine HTML Seite in ein A4 PDF-Dokument
-// @Param request body string true "HTML-Seite"
-// @Accept text/html
-// @Produce  application/pdf
-// @Success 200 {file} binary
-// @Success 500 {string} string
-// @Router /html2pdf/convert [post]
-func Convert(g *gin.Context, wkhtmltopdfPath string) {
-	tmpID, err := uuid.NewV4()
-	if err != nil {
-		g.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
-
-	tmpFile := "/tmp/html2pdf-" + tmpID.String()
-	defer os.Remove(tmpFile)
-
-	data, err := io.ReadAll(g.Request.Body)
-	if err != nil {
-		g.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
-
-	p := exec.Command(wkhtmltopdfPath, "--page-size", "A4", "-", tmpFile)
-	w, err := p.StdinPipe()
-	if err != nil {
-		g.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
-	w.Write(data)
-	w.Close()
-
-	p.Stdout = os.Stdout
-	p.Stderr = os.Stderr
-
-	err = p.Start()
-	if err != nil {
-		g.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
-
-	p.Wait()
-
-	if ec := p.ProcessState.ExitCode(); ec != 0 {
-		g.AbortWithError(http.StatusInternalServerError, errors.New("wkhtmltopdf failed"))
-		return
-	}
-
-	g.Header("content-type", "application/pdf")
-	g.File(tmpFile)
-}
-
-// Healthcheck
-// @Summary Gibt immer "OK" zurück
-// @Produce  text/plain
-// @Success 200 {string} OK
-// @Router /healthcheck [get]
-func HealthCheck(g *gin.Context) {
-	g.String(http.StatusOK, "OK")
 }
