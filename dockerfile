@@ -6,8 +6,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
 
 FROM debian:bullseye as wkhtmltopdf
 RUN apt-get update && apt-get install -y --no-install-recommends wget ca-certificates
-RUN wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6.1-2/wkhtmltox_0.12.6.1-2.bullseye_amd64.deb
-RUN apt-get install -y --no-install-recommends /wkhtmltox_0.12.6.1-2.bullseye_amd64.deb
+RUN wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6.1-2/wkhtmltox_0.12.6.1-2.bullseye_$(dpkg --print-architecture).deb
+RUN apt-get install -y --no-install-recommends /wkhtmltox_0.12.6.1-2.bullseye_$(dpkg --print-architecture).deb
 
 # ---
 
