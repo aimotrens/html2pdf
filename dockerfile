@@ -14,7 +14,7 @@ RUN apt-get install -y --no-install-recommends /wkhtmltox_0.12.6.1-2.bullseye_$(
 FROM golang:1.19 as builder
 WORKDIR /build
 
-RUN go install github.com/swaggo/swag/cmd/swag@latest
+RUN go install github.com/swaggo/swag/cmd/swag@v1.8.12
 
 ADD go.mod .
 ADD go.mod .
